@@ -1,6 +1,8 @@
 package br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.models;
 
+import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.dtos.LoginRequest;
 import jakarta.persistence.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Set;
 import java.util.UUID;
@@ -24,6 +26,10 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
+
+    public boolean isLoginCorrct(LoginRequest loginRequest, PasswordEncoder passwordEncoder) {
+        return passwordEncoder.matches(loginRequest.password(), this.password);
+    }
 
     public String getEmail() {
         return email;
