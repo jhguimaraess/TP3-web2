@@ -24,9 +24,9 @@ public class InvestimentsController {
      * @return ResponseEntity com o resumo dos investimentos ou erro 400 em caso de falha.
      */
     @GetMapping("/summary")
-    public ResponseEntity<InvestimentsSummaryDTO> investimentsSummary() {
+    public ResponseEntity<InvestimentsSummaryDTO> investimentsSummary(JwtAuthenticationToken token) {
         try {
-            return ResponseEntity.ok(investimentsService.investimentsSummary());
+            return ResponseEntity.ok(investimentsService.investimentsSummary(token));
         } catch (Exception e) {
             System.out.println("Erro ao exibir resumo dos investimentos: " + e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -110,15 +110,17 @@ public class InvestimentsController {
      * @return ResponseEntity com o EditInvestimentsDTO atualizado ou erro 400 em caso de falha.
      */
     @PutMapping
-    public ResponseEntity<EditInvestimentsDTO> updateInvestimentById(@RequestBody EditInvestimentsDTO investiment) {
-            return ResponseEntity.ok(investimentsService.updateInvestimentById(investiment));
+    public ResponseEntity<EditInvestimentsDTO> updateInvestimentById(@RequestBody EditInvestimentsDTO investiment,
+                                                                     JwtAuthenticationToken token) {
+            return ResponseEntity.ok(investimentsService.updateInvestimentById(investiment, token));
     }
 
 
     @PutMapping("/sale")
-    public ResponseEntity<InvestimentsDTO> updateStatusInvestimentById(@RequestBody SaleInvestimentsDTO saleInvestimentsDTO ) {
+    public ResponseEntity<InvestimentsDTO> updateStatusInvestimentById(@RequestBody SaleInvestimentsDTO saleInvestimentsDTO,
+                                                                       JwtAuthenticationToken token) {
 
-            return ResponseEntity.ok(investimentsService.CalculateProfitOrLoss(saleInvestimentsDTO));
+            return ResponseEntity.ok(investimentsService.CalculateProfitOrLoss(saleInvestimentsDTO, token));
 
     }
 

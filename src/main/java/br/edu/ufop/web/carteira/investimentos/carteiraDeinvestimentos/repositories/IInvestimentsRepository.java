@@ -17,16 +17,17 @@ public interface IInvestimentsRepository extends JpaRepository<InvestimentsModel
 
  List<InvestimentsModel> findByTypeAndUser(EnumInvestimentsType type, User userId);
 
- @Query("SELECT SUM(i.initialInvestment) FROM InvestimentsModel i")
- Float sumAllInitialInvestments();
+ @Query("SELECT SUM(i.initialInvestment) FROM InvestimentsModel i WHERE i.user = :user")
+ Float sumAllInitialInvestmentsByUser(User user);
 
- @Query("SELECT COUNT(i) FROM InvestimentsModel i")
- Long countAllInvestments();
+ @Query("SELECT COUNT(i) FROM InvestimentsModel i WHERE i.user = :user")
+ Long countAllInvestmentsByUser(User user);
 
 
- @Query("SELECT i.type, SUM(i.initialInvestment) FROM InvestimentsModel i GROUP BY i.type")
- List<Object[]> sumInitialInvestmentByType();
+ @Query("SELECT i.type, SUM(i.initialInvestment) FROM InvestimentsModel i WHERE i.user = :user GROUP BY i.type")
+ List<Object[]> sumInitialInvestmentByTypeByUser(User user);
 
 
  List<InvestimentsModel> findByUser(User user);
+
 }

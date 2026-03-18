@@ -33,11 +33,15 @@ public class InvestimentsService {
     private final AwesomeApi  awesomeApi;
     private final UserRepository userRepository;
 
-    public InvestimentsSummaryDTO investimentsSummary(){
+    public InvestimentsSummaryDTO investimentsSummary(JwtAuthenticationToken token){
+
+        var user = userRepository.findById(UUID.fromString(token.getName()))
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
         // Calcular o total investido, a contagem de ativos e o total por tipo
-        Float totalInvested = investimentsRepository.sumAllInitialInvestments();
-        Long  assetCount = investimentsRepository.countAllInvestments();
-        List<Object[]> totalByType = investimentsRepository.sumInitialInvestmentByType();
+        Float totalInvested = investimentsRepository.sumAllInitialInvestmentsByUser(user);
+        Long  assetCount = investimentsRepository.countAllInvestmentsByUser(user);
+        List<Object[]> totalByType = investimentsRepository.sumInitialInvestmentByTypeByUser(user);
 
         return new InvestimentsSummaryDTO(totalInvested, assetCount, totalByType);
     }
@@ -136,12 +140,17 @@ public class InvestimentsService {
         }
     }
 
-    public EditInvestimentsDTO updateInvestimentById(EditInvestimentsDTO investiment) {
+    public EditInvestimentsDTO updateInvestimentById(EditInvestimentsDTO investiment,
+                                                     JwtAuthenticationToken token) {
 
         Optional<InvestimentsModel> investimentOptional = investimentsRepository.findById(investiment.id());
 
         if(investimentOptional.isEmpty()){
             throw new RuntimeException("Investimento não encontrado com o ID: " + investiment.id());
+        }
+
+        if(!(investimentOptional.get().getUser().getUserId().equals(UUID.fromString(token.getName())))) {
+            throw new RuntimeException("Acesso negado");
         }
 
         // validar os dados do investimento antes de atualizar
@@ -163,11 +172,16 @@ public class InvestimentsService {
     }
 
 
-public InvestimentsDTO CalculateProfitOrLoss(SaleInvestimentsDTO saleInvestimentsDTO) {
+public InvestimentsDTO CalculateProfitOrLoss(SaleInvestimentsDTO saleInvestimentsDTO,
+                                             JwtAuthenticationToken token) {
 
     Optional<InvestimentsModel> investimentOptional = investimentsRepository.findById(saleInvestimentsDTO.id());
     if (investimentOptional.isEmpty()) {
         throw new RuntimeException("Investimento não encontrado com o ID: " + saleInvestimentsDTO.id());
+    }
+
+    if(!(investimentOptional.get().getUser().getUserId().equals(UUID.fromString(token.getName())))) {
+        throw new RuntimeException("Acesso negado");
     }
 
     InvestimentsModel investimentsModel = investimentOptional.get();
