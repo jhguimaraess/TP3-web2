@@ -15,8 +15,10 @@ import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.cl
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.response.AwesomeApiCriptoResponseDTO;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.response.QuoteResponseDTO;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 
 import java.util.List;
@@ -36,7 +38,7 @@ public class InvestimentsService {
     public InvestimentsSummaryDTO investimentsSummary(JwtAuthenticationToken token){
 
         var user = userRepository.findById(UUID.fromString(token.getName()))
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado"));
 
         // Calcular o total investido, a contagem de ativos e o total por tipo
         Float totalInvested = investimentsRepository.sumAllInitialInvestmentsByUser(user);
@@ -121,9 +123,10 @@ public class InvestimentsService {
 
     public InvestimentsDTO deleteInvestimentById(UUID id, JwtAuthenticationToken token) {
         Optional<InvestimentsModel> investimentOptional = investimentsRepository.findById(id);
-        var user = userRepository.findById(UUID.fromString(token.getName()));
+        var user = userRepository.findById(UUID.fromString(token.getName()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 
-        var isAdmin = user.get().getRoles()
+        var isAdmin = user.getRoles()
                 .stream()
                 .anyMatch(role -> role.getName().equalsIgnoreCase(Role.Values.ADMIN.name()));
 
@@ -133,10 +136,10 @@ public class InvestimentsService {
                 investimentsRepository.deleteById(id);
                 return InvestimentsConverter.toInvestimentsDTO(investimentOptional.get());
             }else {
-                throw new RuntimeException("Acesso negado");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para deletar este ativo");
             }
         } else {
-            throw new RuntimeException("Investimento não encontrado com o ID: " + id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Investimento não encontrado");
         }
     }
 
@@ -150,7 +153,7 @@ public class InvestimentsService {
         }
 
         if(!(investimentOptional.get().getUser().getUserId().equals(UUID.fromString(token.getName())))) {
-            throw new RuntimeException("Acesso negado");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
         }
 
         // validar os dados do investimento antes de atualizar
@@ -181,7 +184,7 @@ public InvestimentsDTO CalculateProfitOrLoss(SaleInvestimentsDTO saleInvestiment
     }
 
     if(!(investimentOptional.get().getUser().getUserId().equals(UUID.fromString(token.getName())))) {
-        throw new RuntimeException("Acesso negado");
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
     }
 
     InvestimentsModel investimentsModel = investimentOptional.get();
