@@ -32,6 +32,7 @@ public class SecurityConfig {
     @Value("${jwt.private.key}")
     private RSAPrivateKey privateKey;
 
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
 
         http

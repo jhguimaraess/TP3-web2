@@ -8,11 +8,13 @@ import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.dtos.*;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.enums.EnumInvestimentsType;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.models.InvestimentsModel;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.repositories.IInvestimentsRepository;
+import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.repositories.UserRepository;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.awesomeApi.AwesomeApi;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.brapiApi.BrapiClient;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.response.AwesomeApiCriptoResponseDTO;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.response.QuoteResponseDTO;
 import lombok.AllArgsConstructor;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 
@@ -28,6 +30,7 @@ public class InvestimentsService {
     private final IInvestimentsRepository investimentsRepository;
     private final BrapiClient brapiClient;
     private final AwesomeApi  awesomeApi;
+    private final UserRepository userRepository;
 
     public InvestimentsSummaryDTO investimentsSummary(){
         // Calcular o total investido, a contagem de ativos e o total por tipo
@@ -39,7 +42,9 @@ public class InvestimentsService {
     }
 
 
-    public InvestimentsDTO createInvestiment(CreateInvestimentsDTO investiment) {
+    public InvestimentsDTO createInvestiment(CreateInvestimentsDTO investiment, JwtAuthenticationToken token) {
+
+        var user = userRepository.findById(UUID.fromString(token.getName()));
 
         InvestmentsDomain investmentsDomain = InvestimentsConverter.toInvestmentsDomain(investiment);
 
@@ -78,6 +83,7 @@ public class InvestimentsService {
         createInvestimentsUseCase.calculateInitialInvestment();
 
         InvestimentsModel investimentsModel = InvestimentsConverter.toInvestimentsModel(investmentsDomain);
+        investimentsModel.setUser(user.get());
 
 
         return InvestimentsConverter.toInvestimentsDTO(investimentsRepository.save(investimentsModel));

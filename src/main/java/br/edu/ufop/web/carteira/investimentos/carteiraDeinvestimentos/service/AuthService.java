@@ -30,6 +30,7 @@ public class AuthService {
     public LoginResponse login(LoginRequest loginRequest){
 
         var user = userRepository.findByUsernameOrEmail(loginRequest.username(), loginRequest.username());
+        //var user = userRepository.findByUsername(loginRequest.username());
         if(user.isEmpty() || !user.get().isLoginCorrct(loginRequest, bCryptPasswordEncoder)){
             throw new BadCredentialsException("user or password invalid");
         }

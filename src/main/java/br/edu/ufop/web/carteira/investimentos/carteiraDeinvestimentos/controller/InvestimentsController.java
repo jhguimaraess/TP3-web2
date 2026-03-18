@@ -5,6 +5,7 @@ import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.enums.Enum
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.InvestimentsService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
@@ -40,9 +41,10 @@ public class InvestimentsController {
      * @return ResponseEntity com o InvestimentsDTO criado ou erro 400 em caso de falha.
      */
     @PostMapping
-    public ResponseEntity<InvestimentsDTO> createInvestiment(@RequestBody CreateInvestimentsDTO investiment) {
+    public ResponseEntity<InvestimentsDTO> createInvestiment(@RequestBody CreateInvestimentsDTO investiment,
+                                                             JwtAuthenticationToken token) {
 
-            InvestimentsDTO createdInvestiment = investimentsService.createInvestiment(investiment);
+            InvestimentsDTO createdInvestiment = investimentsService.createInvestiment(investiment, token);
 
             return ResponseEntity.ok(createdInvestiment);
 

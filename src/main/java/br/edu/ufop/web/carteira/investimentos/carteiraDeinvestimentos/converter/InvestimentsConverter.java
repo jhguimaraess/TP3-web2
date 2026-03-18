@@ -46,6 +46,7 @@ public class InvestimentsConverter {
                 investments.getPurchasePrice(),
                 investments.getPurchaseDate(),
                 investments.getInitialInvestment(),
+                investments.getUser().getUsername(),
                 investments.getSalePrice(),
                 investments.getStatusProfitOrLoss(),
                 investments.getFinalInvestment(),

@@ -26,6 +26,10 @@ public class InvestimentsModel {
     private LocalDateTime purchaseDate;
     private Float initialInvestment;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
 
     private Float salePrice;
     private String statusProfitOrLoss;
