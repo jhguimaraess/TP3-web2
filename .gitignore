@@ -33,6 +33,6 @@ build/
 .vscode/
 
 ### Segurança (Chaves RSA) ###
-*.key
-*.pem
-!*.pub
+#*.key
+#*.pem
+#!*.pub
