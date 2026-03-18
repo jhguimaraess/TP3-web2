@@ -7,6 +7,7 @@ import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.domain.use
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.dtos.*;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.enums.EnumInvestimentsType;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.models.InvestimentsModel;
+import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.models.Role;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.repositories.IInvestimentsRepository;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.repositories.UserRepository;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.awesomeApi.AwesomeApi;
@@ -113,11 +114,22 @@ public class InvestimentsService {
 
 
 
-    public InvestimentsDTO deleteInvestimentById(UUID id) {
+    public InvestimentsDTO deleteInvestimentById(UUID id, JwtAuthenticationToken token) {
         Optional<InvestimentsModel> investimentOptional = investimentsRepository.findById(id);
+        var user = userRepository.findById(UUID.fromString(token.getName()));
+
+        var isAdmin = user.get().getRoles()
+                .stream()
+                .anyMatch(role -> role.getName().equalsIgnoreCase(Role.Values.ADMIN.name()));
+
+
         if (investimentOptional.isPresent()) {
-            investimentsRepository.deleteById(id);
-            return InvestimentsConverter.toInvestimentsDTO(investimentOptional.get());
+            if(isAdmin || investimentOptional.get().getUser().getUserId().equals(UUID.fromString(token.getName()))) {
+                investimentsRepository.deleteById(id);
+                return InvestimentsConverter.toInvestimentsDTO(investimentOptional.get());
+            }else {
+                throw new RuntimeException("Acesso negado");
+            }
         } else {
             throw new RuntimeException("Investimento não encontrado com o ID: " + id);
         }

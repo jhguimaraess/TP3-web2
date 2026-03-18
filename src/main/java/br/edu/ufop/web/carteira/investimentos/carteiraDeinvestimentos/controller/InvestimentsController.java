@@ -92,9 +92,9 @@ public class InvestimentsController {
      * @return ResponseEntity com o InvestimentsDTO deletado ou erro 400 em caso de falha.
      */
     @DeleteMapping("/id={id}")
-    public ResponseEntity<InvestimentsDTO> deleteInvestimentById(@PathVariable UUID id) {
+    public ResponseEntity<InvestimentsDTO> deleteInvestimentById(@PathVariable UUID id, JwtAuthenticationToken token) {
         try {
-            return ResponseEntity.ok(investimentsService.deleteInvestimentById(id));
+            return ResponseEntity.ok(investimentsService.deleteInvestimentById(id, token));
         } catch (Exception e) {
             System.out.println("Erro ao deletar investimento: " + e.getMessage());
             return ResponseEntity.badRequest().build();
