@@ -92,8 +92,10 @@ public class InvestimentsService {
 
     }
 
-    public List<InvestimentsDTO> getAllInvestments() {
-        return investimentsRepository.findAll().stream()
+    public List<InvestimentsDTO> getAllInvestments(JwtAuthenticationToken token) {
+        var user = userRepository.findById(UUID.fromString(token.getName()));
+
+        return investimentsRepository.findByUser(user.get()).stream()
                 .map(InvestimentsConverter::toInvestimentsDTO)
                 .collect(Collectors.toList());
     }
@@ -102,14 +104,13 @@ public class InvestimentsService {
 
 
 
-    public List<InvestimentsDTO> getAllByTypeInvestiments(EnumInvestimentsType type) {
+    public List<InvestimentsDTO> getAllByTypeInvestiments(EnumInvestimentsType type, JwtAuthenticationToken token) {
 
-        List<InvestimentsModel> investimentsModel = investimentsRepository.findAllByType(type);
+        var user = userRepository.findById(UUID.fromString(token.getName()));
 
+        List<InvestimentsModel> investimentsModel = investimentsRepository.findByTypeAndUser(type, user.get());
 
         return investimentsModel.stream().map(InvestimentsConverter::toInvestimentsDTO).toList();
-
-
     }
 
 

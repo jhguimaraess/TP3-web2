@@ -57,9 +57,9 @@ public class InvestimentsController {
      * @return ResponseEntity com a lista de investimentos ou erro 400 em caso de falha.
      */
     @GetMapping
-    public ResponseEntity<List<InvestimentsDTO>> getAllInvestments() {
+    public ResponseEntity<List<InvestimentsDTO>> getAllInvestments(JwtAuthenticationToken token) {
         try {
-            return ResponseEntity.ok(investimentsService.getAllInvestments());
+            return ResponseEntity.ok(investimentsService.getAllInvestments(token));
         } catch (Exception e) {
             System.out.println("Erro ao buscar todos os investimentos: " + e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -75,9 +75,10 @@ public class InvestimentsController {
      * @return ResponseEntity com o InvestimentsDTO encontrado ou erro 400 em caso de falha.
      */
     @GetMapping("/type={type}")
-    public ResponseEntity<List<InvestimentsDTO>> getAllByTypeInvestiments(@PathVariable EnumInvestimentsType type) {
+    public ResponseEntity<List<InvestimentsDTO>> getAllByTypeInvestiments(@PathVariable EnumInvestimentsType type,
+                                                                          JwtAuthenticationToken token) {
         try {
-            return ResponseEntity.ok(investimentsService.getAllByTypeInvestiments(type));
+            return ResponseEntity.ok(investimentsService.getAllByTypeInvestiments(type, token));
         } catch (Exception e) {
             System.out.println("Erro ao buscar investimentos por tipo: " + e.getMessage());
             return ResponseEntity.badRequest().build();
