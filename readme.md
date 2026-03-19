@@ -105,3 +105,30 @@ Bruno Dias
 
 ## Link youtube apresentação
 https://youtu.be/9SEiv0_d5YM?si=T1ONTxrrVIEUXIA9
+
+---
+
+# Evolução do Projeto: Segurança & Arquitetura Stateless
+
+Minha contribuição focou em transformar uma aplicação funcional em um ecossistema **multi-usuário seguro**. Saí do modelo de acesso livre para uma arquitetura **Stateless baseada em OAuth2 e JWT**. Isso significa que a aplicação não "guarda" o usuário em uma sessão no servidor, em vez disso, ela valida cada requisição de forma independente e segura.
+
+### Arquitetura de Segurança (RSA JWT)
+
+Utilizei criptografia **RSA (Chave Pública/Privada)** para garantir a integridade dos dados:
+- O backend atua como emissor de tokens. Quando você faz login, o sistema valida suas credenciais e assina um **JWT** usando uma **Chave Privada**.
+- Os endpoints de investimentos são blindados. Para acessar, o cliente deve enviar o token, que é validado pelo backend usando uma **Chave Pública**.
+
+### Este diagrama ilustra exatamente como a segurança funciona na prática:
+
+![Diagrama de Arquitetura](./docs/sequenceDiagram.png)
+
+### Tecnologias de Segurança Utilizadas
+- **Spring Security 6**: Configuração de filtros e proteção de endpoints.
+- **Nimbus JWT**: Biblioteca robusta para codificação e decodificação de tokens.
+- **BCrypt**: Para hashing de senhas no banco de dados (nunca salvamos senhas em texto puro!).
+- **RSA 2048 bits**: Chaves assimétricas para assinatura dos tokens.
+
+
+### Contribuição de:
+
+João Henrique da Silva Guimarães (https://github.com/jhguimaraess)
