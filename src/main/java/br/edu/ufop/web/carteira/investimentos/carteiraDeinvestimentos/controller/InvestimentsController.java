@@ -5,6 +5,7 @@ import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.enums.Enum
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.InvestimentsService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
@@ -23,9 +24,9 @@ public class InvestimentsController {
      * @return ResponseEntity com o resumo dos investimentos ou erro 400 em caso de falha.
      */
     @GetMapping("/summary")
-    public ResponseEntity<InvestimentsSummaryDTO> investimentsSummary() {
+    public ResponseEntity<InvestimentsSummaryDTO> investimentsSummary(JwtAuthenticationToken token) {
         try {
-            return ResponseEntity.ok(investimentsService.investimentsSummary());
+            return ResponseEntity.ok(investimentsService.investimentsSummary(token));
         } catch (Exception e) {
             System.out.println("Erro ao exibir resumo dos investimentos: " + e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -40,9 +41,10 @@ public class InvestimentsController {
      * @return ResponseEntity com o InvestimentsDTO criado ou erro 400 em caso de falha.
      */
     @PostMapping
-    public ResponseEntity<InvestimentsDTO> createInvestiment(@RequestBody CreateInvestimentsDTO investiment) {
+    public ResponseEntity<InvestimentsDTO> createInvestiment(@RequestBody CreateInvestimentsDTO investiment,
+                                                             JwtAuthenticationToken token) {
 
-            InvestimentsDTO createdInvestiment = investimentsService.createInvestiment(investiment);
+            InvestimentsDTO createdInvestiment = investimentsService.createInvestiment(investiment, token);
 
             return ResponseEntity.ok(createdInvestiment);
 
@@ -55,9 +57,9 @@ public class InvestimentsController {
      * @return ResponseEntity com a lista de investimentos ou erro 400 em caso de falha.
      */
     @GetMapping
-    public ResponseEntity<List<InvestimentsDTO>> getAllInvestments() {
+    public ResponseEntity<List<InvestimentsDTO>> getAllInvestments(JwtAuthenticationToken token) {
         try {
-            return ResponseEntity.ok(investimentsService.getAllInvestments());
+            return ResponseEntity.ok(investimentsService.getAllInvestments(token));
         } catch (Exception e) {
             System.out.println("Erro ao buscar todos os investimentos: " + e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -73,9 +75,10 @@ public class InvestimentsController {
      * @return ResponseEntity com o InvestimentsDTO encontrado ou erro 400 em caso de falha.
      */
     @GetMapping("/type={type}")
-    public ResponseEntity<List<InvestimentsDTO>> getAllByTypeInvestiments(@PathVariable EnumInvestimentsType type) {
+    public ResponseEntity<List<InvestimentsDTO>> getAllByTypeInvestiments(@PathVariable EnumInvestimentsType type,
+                                                                          JwtAuthenticationToken token) {
         try {
-            return ResponseEntity.ok(investimentsService.getAllByTypeInvestiments(type));
+            return ResponseEntity.ok(investimentsService.getAllByTypeInvestiments(type, token));
         } catch (Exception e) {
             System.out.println("Erro ao buscar investimentos por tipo: " + e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -90,9 +93,9 @@ public class InvestimentsController {
      * @return ResponseEntity com o InvestimentsDTO deletado ou erro 400 em caso de falha.
      */
     @DeleteMapping("/id={id}")
-    public ResponseEntity<InvestimentsDTO> deleteInvestimentById(@PathVariable UUID id) {
+    public ResponseEntity<InvestimentsDTO> deleteInvestimentById(@PathVariable UUID id, JwtAuthenticationToken token) {
         try {
-            return ResponseEntity.ok(investimentsService.deleteInvestimentById(id));
+            return ResponseEntity.ok(investimentsService.deleteInvestimentById(id, token));
         } catch (Exception e) {
             System.out.println("Erro ao deletar investimento: " + e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -107,15 +110,17 @@ public class InvestimentsController {
      * @return ResponseEntity com o EditInvestimentsDTO atualizado ou erro 400 em caso de falha.
      */
     @PutMapping
-    public ResponseEntity<EditInvestimentsDTO> updateInvestimentById(@RequestBody EditInvestimentsDTO investiment) {
-            return ResponseEntity.ok(investimentsService.updateInvestimentById(investiment));
+    public ResponseEntity<EditInvestimentsDTO> updateInvestimentById(@RequestBody EditInvestimentsDTO investiment,
+                                                                     JwtAuthenticationToken token) {
+            return ResponseEntity.ok(investimentsService.updateInvestimentById(investiment, token));
     }
 
 
     @PutMapping("/sale")
-    public ResponseEntity<InvestimentsDTO> updateStatusInvestimentById(@RequestBody SaleInvestimentsDTO saleInvestimentsDTO ) {
+    public ResponseEntity<InvestimentsDTO> updateStatusInvestimentById(@RequestBody SaleInvestimentsDTO saleInvestimentsDTO,
+                                                                       JwtAuthenticationToken token) {
 
-            return ResponseEntity.ok(investimentsService.CalculateProfitOrLoss(saleInvestimentsDTO));
+            return ResponseEntity.ok(investimentsService.CalculateProfitOrLoss(saleInvestimentsDTO, token));
 
     }
 

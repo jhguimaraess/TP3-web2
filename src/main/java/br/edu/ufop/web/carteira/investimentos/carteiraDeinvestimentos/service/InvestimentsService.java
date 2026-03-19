@@ -7,13 +7,18 @@ import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.domain.use
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.dtos.*;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.enums.EnumInvestimentsType;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.models.InvestimentsModel;
+import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.models.Role;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.repositories.IInvestimentsRepository;
+import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.repositories.UserRepository;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.awesomeApi.AwesomeApi;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.brapiApi.BrapiClient;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.response.AwesomeApiCriptoResponseDTO;
 import br.edu.ufop.web.carteira.investimentos.carteiraDeinvestimentos.service.clients.response.QuoteResponseDTO;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 
 import java.util.List;
@@ -28,18 +33,25 @@ public class InvestimentsService {
     private final IInvestimentsRepository investimentsRepository;
     private final BrapiClient brapiClient;
     private final AwesomeApi  awesomeApi;
+    private final UserRepository userRepository;
 
-    public InvestimentsSummaryDTO investimentsSummary(){
+    public InvestimentsSummaryDTO investimentsSummary(JwtAuthenticationToken token){
+
+        var user = userRepository.findById(UUID.fromString(token.getName()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado"));
+
         // Calcular o total investido, a contagem de ativos e o total por tipo
-        Float totalInvested = investimentsRepository.sumAllInitialInvestments();
-        Long  assetCount = investimentsRepository.countAllInvestments();
-        List<Object[]> totalByType = investimentsRepository.sumInitialInvestmentByType();
+        Float totalInvested = investimentsRepository.sumAllInitialInvestmentsByUser(user);
+        Long  assetCount = investimentsRepository.countAllInvestmentsByUser(user);
+        List<Object[]> totalByType = investimentsRepository.sumInitialInvestmentByTypeByUser(user);
 
         return new InvestimentsSummaryDTO(totalInvested, assetCount, totalByType);
     }
 
 
-    public InvestimentsDTO createInvestiment(CreateInvestimentsDTO investiment) {
+    public InvestimentsDTO createInvestiment(CreateInvestimentsDTO investiment, JwtAuthenticationToken token) {
+
+        var user = userRepository.findById(UUID.fromString(token.getName()));
 
         InvestmentsDomain investmentsDomain = InvestimentsConverter.toInvestmentsDomain(investiment);
 
@@ -78,6 +90,7 @@ public class InvestimentsService {
         createInvestimentsUseCase.calculateInitialInvestment();
 
         InvestimentsModel investimentsModel = InvestimentsConverter.toInvestimentsModel(investmentsDomain);
+        investimentsModel.setUser(user.get());
 
 
         return InvestimentsConverter.toInvestimentsDTO(investimentsRepository.save(investimentsModel));
@@ -85,8 +98,10 @@ public class InvestimentsService {
 
     }
 
-    public List<InvestimentsDTO> getAllInvestments() {
-        return investimentsRepository.findAll().stream()
+    public List<InvestimentsDTO> getAllInvestments(JwtAuthenticationToken token) {
+        var user = userRepository.findById(UUID.fromString(token.getName()));
+
+        return investimentsRepository.findByUser(user.get()).stream()
                 .map(InvestimentsConverter::toInvestimentsDTO)
                 .collect(Collectors.toList());
     }
@@ -95,34 +110,50 @@ public class InvestimentsService {
 
 
 
-    public List<InvestimentsDTO> getAllByTypeInvestiments(EnumInvestimentsType type) {
+    public List<InvestimentsDTO> getAllByTypeInvestiments(EnumInvestimentsType type, JwtAuthenticationToken token) {
 
-        List<InvestimentsModel> investimentsModel = investimentsRepository.findAllByType(type);
+        var user = userRepository.findById(UUID.fromString(token.getName()));
 
+        List<InvestimentsModel> investimentsModel = investimentsRepository.findByTypeAndUser(type, user.get());
 
         return investimentsModel.stream().map(InvestimentsConverter::toInvestimentsDTO).toList();
-
-
     }
 
 
 
-    public InvestimentsDTO deleteInvestimentById(UUID id) {
+    public InvestimentsDTO deleteInvestimentById(UUID id, JwtAuthenticationToken token) {
         Optional<InvestimentsModel> investimentOptional = investimentsRepository.findById(id);
+        var user = userRepository.findById(UUID.fromString(token.getName()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+        var isAdmin = user.getRoles()
+                .stream()
+                .anyMatch(role -> role.getName().equalsIgnoreCase(Role.Values.ADMIN.name()));
+
+
         if (investimentOptional.isPresent()) {
-            investimentsRepository.deleteById(id);
-            return InvestimentsConverter.toInvestimentsDTO(investimentOptional.get());
+            if(isAdmin || investimentOptional.get().getUser().getUserId().equals(UUID.fromString(token.getName()))) {
+                investimentsRepository.deleteById(id);
+                return InvestimentsConverter.toInvestimentsDTO(investimentOptional.get());
+            }else {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para deletar este ativo");
+            }
         } else {
-            throw new RuntimeException("Investimento não encontrado com o ID: " + id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Investimento não encontrado");
         }
     }
 
-    public EditInvestimentsDTO updateInvestimentById(EditInvestimentsDTO investiment) {
+    public EditInvestimentsDTO updateInvestimentById(EditInvestimentsDTO investiment,
+                                                     JwtAuthenticationToken token) {
 
         Optional<InvestimentsModel> investimentOptional = investimentsRepository.findById(investiment.id());
 
         if(investimentOptional.isEmpty()){
             throw new RuntimeException("Investimento não encontrado com o ID: " + investiment.id());
+        }
+
+        if(!(investimentOptional.get().getUser().getUserId().equals(UUID.fromString(token.getName())))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
         }
 
         // validar os dados do investimento antes de atualizar
@@ -144,11 +175,16 @@ public class InvestimentsService {
     }
 
 
-public InvestimentsDTO CalculateProfitOrLoss(SaleInvestimentsDTO saleInvestimentsDTO) {
+public InvestimentsDTO CalculateProfitOrLoss(SaleInvestimentsDTO saleInvestimentsDTO,
+                                             JwtAuthenticationToken token) {
 
     Optional<InvestimentsModel> investimentOptional = investimentsRepository.findById(saleInvestimentsDTO.id());
     if (investimentOptional.isEmpty()) {
         throw new RuntimeException("Investimento não encontrado com o ID: " + saleInvestimentsDTO.id());
+    }
+
+    if(!(investimentOptional.get().getUser().getUserId().equals(UUID.fromString(token.getName())))) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
     }
 
     InvestimentsModel investimentsModel = investimentOptional.get();
